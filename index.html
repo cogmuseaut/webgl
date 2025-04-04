@@ -1,8 +1,10 @@
+-->
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Unity WebGL Player | BrainGames2</title>
     <style>
       html, body {
@@ -11,7 +13,8 @@
         margin: 0;
         padding: 0;
         overflow: hidden;
-
+        position: fixed; /* Prevent bounce on iOS */
+        
         -webkit-touch-callout: none;
         -webkit-user-select: none;
         -khtml-user-select: none;
@@ -29,9 +32,14 @@
     </style>
   </head>
   <body>
-    <canvas id="unity-canvas" tabindex="-1"></canvas>
+    <canvas id="unity-canvas" tabindex="1"></canvas>
     <script src="Build/webgl.loader.js"></script>
     <script>
+      // Detect iOS 
+      var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      var isIOSSafari = isIOS && isSafari;
+      
       // If on mobile, we already set the canvas style accordingly.
       // For desktop, update the internal resolution with a resize listener:
       function resizeCanvas() {
@@ -43,23 +51,52 @@
       window.addEventListener("resize", resizeCanvas);
       resizeCanvas();
 
-      // Prevent spacebar scrolling
+      // Prevent ALL key-based scrolling
       window.addEventListener('keydown', function(e) {
         // Space key is 32
-        if (e.keyCode === 32 && e.target === document.body) {
+        if (e.keyCode === 32 || e.keyCode === 37 || e.keyCode === 38 || 
+            e.keyCode === 39 || e.keyCode === 40) {
           e.preventDefault();
+          return false;
         }
-      });
-
-      // Force focus on iOS Safari
-      function handleTouchStart() {
-        var canvas = document.getElementById("unity-canvas");
+      }, { passive: false });
+      
+      var canvas = document.getElementById("unity-canvas");
+      
+      // Force focus immediately
+      canvas.focus();
+      
+      // More aggressive touch handling for iOS Safari
+      function handleTouchEvent(e) {
+        // Prevent default behavior for ALL touch events
+        e.preventDefault();
+        // Force focus
         canvas.focus();
+        return false;
       }
-
-      // Add event listeners for iOS Safari
-      document.addEventListener('touchstart', handleTouchStart, false);
-      document.addEventListener('mousedown', handleTouchStart, false);
+      
+      // Prevent default touch behaviors on iOS
+      if (isIOSSafari) {
+        // Add capturing phase listeners to prevent default behaviors
+        document.addEventListener('touchstart', handleTouchEvent, { capture: true, passive: false });
+        document.addEventListener('touchmove', handleTouchEvent, { capture: true, passive: false });
+        document.addEventListener('touchend', handleTouchEvent, { capture: true, passive: false });
+        
+        // Also handle mouse events similarly
+        document.addEventListener('mousedown', function(e) {
+          canvas.focus();
+          e.preventDefault();
+          return false;
+        }, { capture: true, passive: false });
+      } else {
+        // For non-iOS devices, simpler focus handling
+        document.addEventListener('touchstart', function() {
+          canvas.focus();
+        }, false);
+        document.addEventListener('mousedown', function() {
+          canvas.focus();
+        }, false);
+      }
 
       var unityInstance = null;
       createUnityInstance(document.getElementById("unity-canvas"), {
@@ -70,7 +107,7 @@
         companyName: "Cogmuse",
         productName: "BrainGames2",
         productVersion: "3.0.3",
-        matchWebGLToCanvasSize: true, // Let Unity auto-adjust the render buffer to match the canvas size
+        matchWebGLToCanvasSize: true,
         mobileBindingSettingsURL: null,
         showBanner: false
       }).then(function(instance) {
@@ -78,11 +115,22 @@
         console.log("Unity instance created.");
         
         // After Unity loads, configure input handling
-        if (unityInstance.Module && typeof unityInstance.Module.WebGLInput !== "undefined") {
-          // Fine-tune keyboard capturing for iOS
-          if (typeof unityInstance.Module.WebGLInput.captureAllKeyboardInput !== "undefined") {
-            // Only capture keyboard input when canvas is focused
-            unityInstance.Module.WebGLInput.captureAllKeyboardInput = true;
+        if (unityInstance.Module) {
+          // For iOS Safari, we need to be more aggressive about input capturing
+          if (isIOSSafari) {
+            // Disable all default browser actions
+            if (typeof unityInstance.Module.WebGLInput !== "undefined") {
+              if (typeof unityInstance.Module.WebGLInput.captureAllKeyboardInput !== "undefined") {
+                unityInstance.Module.WebGLInput.captureAllKeyboardInput = true;
+              }
+              // Some Unity versions use different properties
+              if (typeof unityInstance.Module.WebGLInput.engineInput !== "undefined") {
+                unityInstance.Module.WebGLInput.engineInput.preventDefaultKeyboardEvents = true;
+              }
+              if (typeof unityInstance.Module.WebGLInput.mouseEvents !== "undefined") {
+                unityInstance.Module.WebGLInput.mouseEvents.preventDefault = true;
+              }
+            }
           }
         }
       }).catch(function(message) {
