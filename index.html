@@ -53,9 +53,9 @@
 
       // Prevent ALL key-based scrolling
       window.addEventListener('keydown', function(e) {
-        // Space key is 32
-        if (e.keyCode === 32 || e.keyCode === 37 || e.keyCode === 38 || 
-            e.keyCode === 39 || e.keyCode === 40) {
+        // Only prevent default if target is NOT the canvas
+        if ((e.keyCode === 32 || e.keyCode === 37 || e.keyCode === 38 || 
+            e.keyCode === 39 || e.keyCode === 40) && e.target !== canvas) {
           e.preventDefault();
           return false;
         }
@@ -121,14 +121,14 @@
             // Disable all default browser actions
             if (typeof unityInstance.Module.WebGLInput !== "undefined") {
               if (typeof unityInstance.Module.WebGLInput.captureAllKeyboardInput !== "undefined") {
+                // Ensure keyboard input reaches the Unity application
                 unityInstance.Module.WebGLInput.captureAllKeyboardInput = true;
+                console.log("Keyboard input capture enabled");
               }
               // Some Unity versions use different properties
               if (typeof unityInstance.Module.WebGLInput.engineInput !== "undefined") {
-                unityInstance.Module.WebGLInput.engineInput.preventDefaultKeyboardEvents = true;
-              }
-              if (typeof unityInstance.Module.WebGLInput.mouseEvents !== "undefined") {
-                unityInstance.Module.WebGLInput.mouseEvents.preventDefault = true;
+                unityInstance.Module.WebGLInput.engineInput.preventDefaultKeyboardEvents = false;
+                console.log("Keyboard event prevention disabled for engineInput");
               }
             }
           }
