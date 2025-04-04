@@ -120,14 +120,14 @@
             // Disable all default browser actions
             if (typeof unityInstance.Module.WebGLInput !== "undefined") {
               if (typeof unityInstance.Module.WebGLInput.captureAllKeyboardInput !== "undefined") {
-                // Ensure keyboard input reaches the Unity application
                 unityInstance.Module.WebGLInput.captureAllKeyboardInput = true;
-                console.log("Keyboard input capture enabled");
               }
               // Some Unity versions use different properties
               if (typeof unityInstance.Module.WebGLInput.engineInput !== "undefined") {
-                unityInstance.Module.WebGLInput.engineInput.preventDefaultKeyboardEvents = false;
-                console.log("Keyboard event prevention disabled for engineInput");
+                unityInstance.Module.WebGLInput.engineInput.preventDefaultKeyboardEvents = true;
+              }
+              if (typeof unityInstance.Module.WebGLInput.mouseEvents !== "undefined") {
+                unityInstance.Module.WebGLInput.mouseEvents.preventDefault = true;
               }
             }
           }
