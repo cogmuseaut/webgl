@@ -11,12 +11,20 @@
         margin: 0;
         padding: 0;
         overflow: hidden;
+
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
       }
       #unity-canvas {
         width: 100%;
         height: 100%;
         background: #231F20;
         display: block;
+        touch-action: none;
       }
     </style>
   </head>
@@ -35,6 +43,25 @@
       window.addEventListener("resize", resizeCanvas);
       resizeCanvas();
 
+      // Prevent spacebar scrolling
+      window.addEventListener('keydown', function(e) {
+        // Space key is 32
+        if (e.keyCode === 32 && e.target === document.body) {
+          e.preventDefault();
+        }
+      });
+
+      // Force focus on iOS Safari
+      function handleTouchStart() {
+        var canvas = document.getElementById("unity-canvas");
+        canvas.focus();
+      }
+
+      // Add event listeners for iOS Safari
+      document.addEventListener('touchstart', handleTouchStart, false);
+      document.addEventListener('mousedown', handleTouchStart, false);
+
+      var unityInstance = null;
       createUnityInstance(document.getElementById("unity-canvas"), {
         dataUrl: "Build/webgl.data",
         frameworkUrl: "Build/webgl.framework.js",
@@ -42,10 +69,22 @@
         streamingAssetsUrl: "StreamingAssets",
         companyName: "Cogmuse",
         productName: "BrainGames2",
-        productVersion: "2.0.3",
+        productVersion: "3.0.3",
         matchWebGLToCanvasSize: true, // Let Unity auto-adjust the render buffer to match the canvas size
-      }).then(function(unityInstance) {
+        mobileBindingSettingsURL: null,
+        showBanner: false
+      }).then(function(instance) {
+        unityInstance = instance;
         console.log("Unity instance created.");
+        
+        // After Unity loads, configure input handling
+        if (unityInstance.Module && typeof unityInstance.Module.WebGLInput !== "undefined") {
+          // Fine-tune keyboard capturing for iOS
+          if (typeof unityInstance.Module.WebGLInput.captureAllKeyboardInput !== "undefined") {
+            // Only capture keyboard input when canvas is focused
+            unityInstance.Module.WebGLInput.captureAllKeyboardInput = true;
+          }
+        }
       }).catch(function(message) {
         alert(message);
       });
