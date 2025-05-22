@@ -127,13 +127,26 @@
       }).then(function(instance) {
         unityInstance = instance;
         console.log("Unity instance created.");
-        
+        // Early seed: read all currentLevelXX from URL and set before any Init
+        const suffixMap = ["currentLevelWW", "currentLevelSS", "currentLevelCC", "currentLevelAM"];
+        suffixMap.forEach(key => {
+          const val = parseInt(getQueryParam(key), 10);
+          if (!isNaN(val)) {
+            instance.SendMessage(
+              'GameManager',
+              'JSSetResource',
+              JSON.stringify({ key: key, value: val })
+            );
+            console.log(`Seeded ${key} = ${val}`);
+          }
+        });
+
         // Immediately set initial level from URL param before any Init runs
         const startLevel = parseInt(getQueryParam('startLevel'), 10);
         const type = gameType;
-        const suffixMap = {1:'WW',2:'SS',3:'CC',4:'AM'};
-        const key = `currentLevel${suffixMap[type]}`;
-        if (!isNaN(startLevel) && suffixMap[type]) {
+        const suffixMap2 = {1:'WW',2:'SS',3:'CC',4:'AM'};
+        const key = `currentLevel${suffixMap2[type]}`;
+        if (!isNaN(startLevel) && suffixMap2[type]) {
           instance.SendMessage(
             'GameManager',
             'JSSetResource',
