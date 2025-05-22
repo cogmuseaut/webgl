@@ -32,9 +32,13 @@
     </style>
   </head>
   <body>
-    <canvas id="unity-canvas" tabindex="-1"></canvas>
+    <canvas id="unity-canvas" tabindex="1"></canvas>
     <script src="Build/webgl.loader.js"></script>
     <script>
+      // Detect iOS 
+      var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      var isIOSSafari = isIOS && isSafari;
       // Parse gameType from query string for handshake
       function getQueryParam(name) {
         const params = new URLSearchParams(window.location.search);
@@ -107,10 +111,33 @@
         streamingAssetsUrl: "StreamingAssets",
         companyName: "Cogmuse",
         productName: "BrainGames2",
-        productVersion: "2.0.3",
-        matchWebGLToCanvasSize: true, // Let Unity auto-adjust the render buffer to match the canvas size
-      }).then(function(unityInstance) {
+        productVersion: "3.0.3",
+        matchWebGLToCanvasSize: true,
+        mobileBindingSettingsURL: null,
+        showBanner: false
+      }).then(function(instance) {
+        unityInstance = instance;
         console.log("Unity instance created.");
+                
+        // After Unity loads, configure input handling
+        if (unityInstance.Module) {
+          // For iOS Safari, we need to be more aggressive about input capturing
+          if (isIOSSafari) {
+            // Disable all default browser actions
+            if (typeof unityInstance.Module.WebGLInput !== "undefined") {
+              if (typeof unityInstance.Module.WebGLInput.captureAllKeyboardInput !== "undefined") {
+                unityInstance.Module.WebGLInput.captureAllKeyboardInput = true;
+              }
+              // Some Unity versions use different properties
+              if (typeof unityInstance.Module.WebGLInput.engineInput !== "undefined") {
+                unityInstance.Module.WebGLInput.engineInput.preventDefaultKeyboardEvents = true;
+              }
+              if (typeof unityInstance.Module.WebGLInput.mouseEvents !== "undefined") {
+                unityInstance.Module.WebGLInput.mouseEvents.preventDefault = true;
+              }
+            }
+          }
+        }
         // Notify parent window that Unity is ready, include gameType
         window.parent.postMessage(JSON.stringify({ type: 'unityReady', gameType: gameType }), '*');
       }).catch(function(message) {
