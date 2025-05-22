@@ -47,6 +47,14 @@
       }
       const gameType = parseInt(getQueryParam('gameType'), 10) || 0;
 
+      // Expose a global JS function for Unity (C#) to call when GameManager is ready
+      function onUnityReady(gameType) {
+        window.parent.postMessage(
+          JSON.stringify({ type: 'unityReady', gameType: gameType }),
+          '*'
+        );
+      }
+
       // If on mobile, we already set the canvas style accordingly.
       // For desktop, update the internal resolution with a resize listener:
       function resizeCanvas() {
@@ -139,8 +147,7 @@
             }
           }
         }
-        // Notify parent window that Unity is ready, include gameType
-        window.parent.postMessage({ type: 'unityReady', gameType: gameType }, '*');
+        // Remove early handshake; C# will call onUnityReady when ready.
         // Listen for resource updates from parent and forward into Unity
         window.addEventListener('message', function(e) {
           let msg;
