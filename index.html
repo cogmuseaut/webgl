@@ -127,27 +127,20 @@
       }).then(function(instance) {
         unityInstance = instance;
         console.log("Unity instance created.");
-                
-        // After Unity loads, configure input handling
-        if (unityInstance.Module) {
-          // For iOS Safari, we need to be more aggressive about input capturing
-          if (isIOSSafari) {
-            // Disable all default browser actions
-            if (typeof unityInstance.Module.WebGLInput !== "undefined") {
-              if (typeof unityInstance.Module.WebGLInput.captureAllKeyboardInput !== "undefined") {
-                unityInstance.Module.WebGLInput.captureAllKeyboardInput = true;
-              }
-              // Some Unity versions use different properties
-              if (typeof unityInstance.Module.WebGLInput.engineInput !== "undefined") {
-                unityInstance.Module.WebGLInput.engineInput.preventDefaultKeyboardEvents = true;
-              }
-              if (typeof unityInstance.Module.WebGLInput.mouseEvents !== "undefined") {
-                unityInstance.Module.WebGLInput.mouseEvents.preventDefault = true;
-              }
-            }
-          }
+        
+        // Immediately set initial level from URL param before any Init runs
+        const startLevel = parseInt(getQueryParam('startLevel'), 10);
+        const type = gameType;
+        const suffixMap = {1:'WW',2:'SS',3:'CC',4:'AM'};
+        const key = `currentLevel${suffixMap[type]}`;
+        if (!isNaN(startLevel) && suffixMap[type]) {
+          instance.SendMessage(
+            'GameManager',
+            'JSSetResource',
+            JSON.stringify({ key: key, value: startLevel })
+          );
         }
-        // Remove early handshake; C# will call onUnityReady when ready.
+
         // Listen for resource updates from parent and forward into Unity
         window.addEventListener('message', function(e) {
           let msg;
