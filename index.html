@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Unity WebGL Player | BrainGames2</title>
     <style>
       html, body {
@@ -139,7 +140,7 @@
           }
         }
         // Notify parent window that Unity is ready, include gameType
-        window.parent.postMessage(JSON.stringify({ type: 'unityReady', gameType: gameType }), '*');
+        window.parent.postMessage({ type: 'unityReady', gameType: gameType }, '*');
       }).catch(function(message) {
         alert(message);
       });
